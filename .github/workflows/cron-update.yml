@@ -1,0 +1,48 @@
+on:
+  schedule:
+    - cron: "10 23 * * *"
+  workflow_dispatch:
+  watch:
+    types: [started]
+
+jobs:
+  sync_tailscale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Latest Tailscale
+        id: get_latest_version
+        run: |
+          echo ${{ github.event.repository.full_name }}
+          repo_latest=$(curl https://api.github.com/repos/${{ github.event.repository.full_name }}/releases | jq -r '.[0].name')
+          tailscale_latest=$(curl https://api.github.com/repos/tailscale/tailscale/releases | jq -r '.[0].name')
+          if [ $repo_latest == $tailscale_latest ]; then
+            echo "Tailscale no update."
+            exit 0
+          fi
+          echo "version=$tailscale_latest" >> "$GITHUB_OUTPUT"
+    outputs:
+      version: ${{ steps.get_latest_version.outputs.version }}
+
+  build_tailscale:
+    runs-on: ubuntu-latest
+    needs: sync_tailscale
+    permissions:
+      contents: write
+    steps:
+      - run: curl -L -o ./tailscale.tar.gz https://github.com/tailscale/tailscale/archive/refs/tags/${{ needs.sync_tailscale.outputs.version }}.tar.gz
+      - run: tar -zxf tailscale.tar.gz
+      - name: Build
+        run: |
+          cd "tailscale-$(echo ${{ needs.sync_tailscale.outputs.version }} | awk '{print substr($0,2,99)}')"
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o tailscale -tags ts_include_cli -ldflags="-s -w" ./cmd/tailscaled
+          upx --lzma --best ./tailscale
+          tar -zcf ../tailscale_${{ needs.sync_tailscale.outputs.version }}_arm64_upx.tar.gz ./tailscale
+      - name: Create Release and Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.sync_tailscale.outputs.version }}
+          name: ${{ needs.sync_tailscale.outputs.version }}
+          body: 版本 ${{ needs.sync_tailscale.outputs.version }} 已从上游同步
+          draft: false
+          prerelease: false
+          files: tailscale_${{ needs.sync_tailscale.outputs.version }}_arm64_upx.tar.gz
