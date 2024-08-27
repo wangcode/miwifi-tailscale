@@ -18,7 +18,7 @@ jobs:
           version=$(echo $tailscale_latest | jq -r '.name')
           if [ $repo_latest == $version ]; then
             echo "Tailscale no update."
-            exit 0
+            exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "html_url=$(echo $tailscale_latest | jq -r '.html_url')" >> "$GITHUB_OUTPUT"
