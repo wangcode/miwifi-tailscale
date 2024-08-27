@@ -37,6 +37,7 @@ jobs:
       - name: Build
         run: |
           cd "tailscale-$(echo ${{ needs.sync_tailscale.outputs.version }} | awk '{print substr($0,2,99)}')"
+          git init
           GOOS=linux GOARCH=arm64 sh build_dist.sh --box --extra-small -o tailscale ./cmd/tailscaled
           upx --lzma --best ./tailscale
           tar -zcf ../tailscale_${{ needs.sync_tailscale.outputs.version }}_arm64_upx.tar.gz ./tailscale
