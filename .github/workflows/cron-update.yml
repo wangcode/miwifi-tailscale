@@ -15,7 +15,7 @@ jobs:
           echo ${{ github.event.repository.full_name }}
           repo_latest=$(curl https://api.github.com/repos/${{ github.event.repository.full_name }}/releases | jq -r '.[0].tag_name')
           tailscale_latest=$(curl https://api.github.com/repos/tailscale/tailscale/releases | jq '.[0]')
-          version=$(echo $tailscale_latest | jq -r '.name')
+          version=$(echo $tailscale_latest | jq -r '.tag_name')
           if [ $repo_latest == $version ]; then
             echo "Tailscale no update."
             exit 1
