@@ -1,10 +1,10 @@
 #!/bin/sh
-version="1.72.1"
+version="1.74.0"
 install_path="/data/tailscale"
 bin_path="$install_path/bin"
 
 mkdir -p "$install_path/bin"
-curl -SL https://github.com/wangcode/miwifi-tailscale/releases/download/v$version/tailscale_v$version_arm64_upx.tar.gz | tar -zxC "$bin_path"
+curl -SL https://github.com/wangcode/miwifi-tailscale/releases/download/v${version}/tailscale_v${version}_arm64_upx.tar.gz | tar -zxC "$bin_path"
 ln -s "$bin_path/tailscaled" "$bin_path/tailscale"
 
 cat > "$install_path/tailscaled.procd" <<EOF
