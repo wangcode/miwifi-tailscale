@@ -1,10 +1,13 @@
 #!/bin/sh
-version="1.74.0"
+releases_url="https://api.github.com/repos/wangcode/miwifi-tailscale/releases"
 install_path="/data/tailscale"
 bin_path="$install_path/bin"
 
+response=$(curl -s "$releases_url")
+latest_version=$(echo "$response" | grep '"tag_name":' | head -n 1 | awk -F '"' '{print $4}')
+
 mkdir -p "$install_path/bin"
-curl -SL https://github.com/wangcode/miwifi-tailscale/releases/download/v${version}/tailscale_v${version}_arm64_upx.tar.gz | tar -zxC "$bin_path"
+curl -SL https://github.com/wangcode/miwifi-tailscale/releases/download/v${latest_version}/tailscale_v${latest_version}_arm64_upx.tar.gz | tar -zxC "$bin_path"
 ln -s "$bin_path/tailscaled" "$bin_path/tailscale"
 
 cat > "$install_path/tailscaled.procd" <<EOF
@@ -37,6 +40,11 @@ EOF
 
 cat > "$install_path/start_up.sh" <<EOF
 #!/bin/sh
+
+if [ ! -f "/tmp/tailscale_version.txt" ]; then
+  echo "$tailscale_version" > "/tmp/tailscale_version.txt"
+  exit 0
+fi
 
 cp "$install_path/tailscaled.procd" /etc/init.d/tailscaled
 chmod 755 /etc/init.d/tailscaled
